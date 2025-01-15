@@ -4,7 +4,6 @@ from .views import UsuarioViewSet, CorreoElectricoViewSet, PhishingReporteViewSe
 from django.urls import path
 from . import views
 
-
 router = DefaultRouter()
 router.register(r'usuarios', UsuarioViewSet)
 router.register(r'correos', CorreoElectricoViewSet)
@@ -13,4 +12,5 @@ router.register(r'configuraciones', ConfiguracionSeguridadViewSet)
 
 urlpatterns = [
     path('usuarios/', views.usuario_list, name='usuario_list'),
+    path('predecir/', views.predecir, name='predecir'),
 ]

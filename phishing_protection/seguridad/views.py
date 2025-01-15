@@ -5,6 +5,9 @@ from .models import Usuario, CorreoElectrico, PhishingReporte, ConfiguracionSegu
 from .serializers import UsuarioSerializer, CorreoElectricoSerializer, PhishingReporteSerializer, ConfiguracionSeguridadSerializer
 from django.http import HttpResponse
 from django.http import JsonResponse
+import pickle
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def home(request):
     return HttpResponse("Bienvenido al backend de Phishing Protection.")
@@ -27,3 +30,39 @@ class PhishingReporteViewSet(viewsets.ModelViewSet):
 class ConfiguracionSeguridadViewSet(viewsets.ModelViewSet):
     queryset = ConfiguracionSeguridad.objects.all()
     serializer_class = ConfiguracionSeguridadSerializer
+
+# Cargar el modelo y el vectorizador (esto puede hacerse fuera de la vista si no cambia durante las solicitudes)
+with open('models/modelo_spam.pkl', 'rb') as model_file:
+    model = pickle.load(model_file)
+
+with open('models/vectorizer.pkl', 'rb') as vectorizer_file:
+    vectorizer = pickle.load(vectorizer_file)
+
+# Función para predecir si un correo es spam o no
+def predecir_spam(correo_texto):
+    correo_transformado = vectorizer.transform([correo_texto])
+    prediccion = model.predict(correo_transformado)
+    return "Malicioso" if prediccion[0] == 1 else "Legítimo"
+
+# Vista para recibir correo y devolver la predicción
+@csrf_exempt
+def predecir(request):
+    if request.method == 'POST':
+        if request.content_type == 'application/json':
+            try:
+                # Leer los datos JSON del cuerpo de la solicitud
+                data = json.loads(request.body)
+                correo_texto = data.get('contenido')
+
+                if correo_texto:
+                    resultado = predecir_spam(correo_texto)
+                    return JsonResponse({'resultado': resultado})
+                else:
+                    return JsonResponse({'error': 'No se proporcionó contenido en el correo'}, status=400)
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Error al procesar el JSON'}, status=400)
+        else:
+            return JsonResponse({'error': 'Tipo de contenido no permitido. Usa application/json.'}, status=415)
+
+    # Si la solicitud no es POST, respondemos con un error 405 (Método no permitido)
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
