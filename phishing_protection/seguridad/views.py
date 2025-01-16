@@ -8,12 +8,17 @@ from django.http import JsonResponse
 import pickle
 from django.views.decorators.csrf import csrf_exempt
 import json
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .serializers import ConfiguracionSeguridadSerializer
 
 def home(request):
     return HttpResponse("Bienvenido al backend de Phishing Protection.")
 
 def usuario_list(request):
-    return JsonResponse({"mensaje": "Lista de usuarios (ejemplo)."})
+    usuarios = Usuario.objects.all()  # Consulta todos los usuarios
+    usuarios_data = list(usuarios.values())  # Convierte el queryset en una lista de diccionarios
+    return JsonResponse(usuarios_data, safe=False)  # Devuelve los datos como JSON
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -66,3 +71,24 @@ def predecir(request):
 
     # Si la solicitud no es POST, respondemos con un error 405 (Método no permitido)
     return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+def obtener_configuraciones(request, id_usuario):
+    try:
+        configuracion = ConfiguracionSeguridad.objects.get(id_usuario=id_usuario)
+        data = {
+            'nivel_seguridad': configuracion.nivel_seguridad,
+            'notificacion': configuracion.notificacion
+        }
+        return JsonResponse(data, status=200)
+    except ConfiguracionSeguridad.DoesNotExist:
+        return JsonResponse({'error': 'Configuración no encontrada'}, status=404)
+
+
+@api_view(['GET'])
+def obtener_configuraciones(request, id_usuario):
+    try:
+        configuracion = ConfiguracionSeguridad.objects.get(id_usuario=id_usuario)
+        serializer = ConfiguracionSeguridadSerializer(configuracion)
+        return Response(serializer.data)
+    except ConfiguracionSeguridad.DoesNotExist:
+        return Response({'error': 'Configuración no encontrada'}, status=404)

@@ -20,3 +20,8 @@ class ConfiguracionSeguridadSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionSeguridad
         fields = '__all__'
+
+class ConfiguracionSeguridadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfiguracionSeguridad
+        fields = ['id_usuario', 'nivel_seguridad', 'notificacion']

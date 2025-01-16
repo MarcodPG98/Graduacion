@@ -13,4 +13,5 @@ router.register(r'configuraciones', ConfiguracionSeguridadViewSet)
 urlpatterns = [
     path('usuarios/', views.usuario_list, name='usuario_list'),
     path('predecir/', views.predecir, name='predecir'),
+    path('configuracion/<int:id_usuario>/', views.obtener_configuraciones, name='obtener_configuracion'),
 ]
